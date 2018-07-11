@@ -1,14 +1,12 @@
 {
   "name": "bounce",
   "version": "1.0.0",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "author": "Brian Cavalier <brian@briancavalier.com>",
   "license": "MIT",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "rollup -c",
-    "watch": "rollup -c -w"
+    "build:add-inputs": "rollup -c -i add-inputs/index.ts -o add-inputs/app/index.js",
+    "build:mouse-position": "rollup -c -i mouse-position/index.ts -o mouse-position/app/index.js"
   },
   "devDependencies": {
     "prettier": "^1.13.7",
