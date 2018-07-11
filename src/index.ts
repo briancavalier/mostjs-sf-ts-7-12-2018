@@ -1,4 +1,4 @@
-import { combine, map, runEffects, startWith } from '@most/core'
+import { combine, map, runEffects, startWith, tap } from '@most/core'
 import { input } from '@most/dom-event'
 import { newDefaultScheduler } from '@most/scheduler'
 
@@ -13,7 +13,8 @@ const xInput = qs('input.x')
 const yInput = qs('input.y')
 const resultNode = qs('.result')
 
-const add = (x: number, y: number): number => x + y
+const add = (x: number, y: number): number =>
+  x + y
 
 const toNumber = (e: Event): number =>
   Number((e.target as HTMLFormElement).value)
@@ -32,6 +33,4 @@ const y = startWith(0, map(toNumber, input(yInput)))
 const result = combine(add, x, y)
 
 // Observe the result value by rendering it to the resultNode
-const updates = map(renderResult, result)
-
-runEffects(updates, newDefaultScheduler())
+runEffects(tap(renderResult, result), newDefaultScheduler())

@@ -10,8 +10,8 @@ export default {
     ts({ typescript })
   ],
   output: [{
-    file: pkg.module,
-    format: 'es',
+    file: pkg.main,
+    format: 'iife',
     sourcemap: true
   }]
 }
