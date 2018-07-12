@@ -6,7 +6,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build:add-inputs": "rollup -c -i add-inputs/index.ts -o add-inputs/app/index.js",
-    "build:mouse-position": "rollup -c -i mouse-position/index.ts -o mouse-position/app/index.js"
+    "build:mouse-position": "rollup -c -i mouse-position/index.ts -o mouse-position/app/index.js",
+    "build:todomvc": "rollup -c -i todomvc/src/index.ts -o todomvc/js/app.js"
   },
   "devDependencies": {
     "prettier": "^1.13.7",
