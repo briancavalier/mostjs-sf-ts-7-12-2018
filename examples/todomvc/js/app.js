@@ -620,6 +620,12 @@
     return scheduler.scheduleTask(0, delay, -1, task);
   });
 
+  // Schedule a task to run periodically, with the
+  // first run starting asap
+  var periodic = /*#__PURE__*/curry3(function (period, task, scheduler) {
+    return scheduler.scheduleTask(0, 0, period, task);
+  });
+
   // Cancel all ScheduledTasks for which a predicate
   // is true
   var cancelAllTasks = /*#__PURE__*/curry2(function (predicate, scheduler) {
@@ -891,6 +897,10 @@
     return propagateTask$1(runEnd, undefined, sink);
   };
 
+  var propagateErrorTask$1 = function propagateErrorTask(value, sink) {
+    return propagateTask$1(runError, value, sink);
+  };
+
   var PropagateTask = /*#__PURE__*/function () {
     function PropagateTask(run, value, sink) {
       classCallCheck$2(this, PropagateTask);
@@ -930,6 +940,10 @@
 
   var runEnd = function runEnd(t, _, sink) {
     return sink.end(t);
+  };
+
+  var runError = function runError(t, e, sink) {
+    return sink.error(t, e);
   };
 
   /** @license MIT License (c) copyright 2010-2017 original author or authors */
@@ -975,6 +989,40 @@
   }();
 
   var NEVER = /*#__PURE__*/new Never();
+
+  var At = /*#__PURE__*/function () {
+    function At(t, x) {
+      classCallCheck$2(this, At);
+
+      this.time = t;
+      this.value = x;
+    }
+
+    At.prototype.run = function run(sink, scheduler$$1) {
+      return delay(this.time, propagateTask$1(runAt, this.value, sink), scheduler$$1);
+    };
+
+    return At;
+  }();
+
+  function runAt(t, x, sink) {
+    sink.event(t, x);
+    sink.end(t);
+  }
+
+  var Periodic = /*#__PURE__*/function () {
+    function Periodic(period) {
+      classCallCheck$2(this, Periodic);
+
+      this.period = period;
+    }
+
+    Periodic.prototype.run = function run(sink, scheduler$$1) {
+      return periodic(this.period, propagateEventTask$1(undefined, sink), scheduler$$1);
+    };
+
+    return Periodic;
+  }();
 
   /** @license MIT License (c) copyright 2010-2017 original author or authors */
   /** @author Brian Cavalier */
@@ -1210,6 +1258,26 @@
     return SettableDisposable;
   }();
 
+  var Slice = /*#__PURE__*/function () {
+    function Slice(bounds, source) {
+      classCallCheck$2(this, Slice);
+
+      this.source = source;
+      this.bounds = bounds;
+    }
+
+    Slice.prototype.run = function run(sink, scheduler$$1) {
+      var disposable$$1 = new SettableDisposable();
+      var sliceSink = new SliceSink(this.bounds.min, this.bounds.max - this.bounds.min, sink, disposable$$1);
+
+      disposable$$1.setDisposable(this.source.run(sliceSink, scheduler$$1));
+
+      return disposable$$1;
+    };
+
+    return Slice;
+  }();
+
   var SliceSink = /*#__PURE__*/function (_Pipe) {
     inherits(SliceSink, _Pipe);
 
@@ -1246,6 +1314,26 @@
     return SliceSink;
   }(Pipe);
 
+  var TakeWhile = /*#__PURE__*/function () {
+    function TakeWhile(p, source) {
+      classCallCheck$2(this, TakeWhile);
+
+      this.p = p;
+      this.source = source;
+    }
+
+    TakeWhile.prototype.run = function run(sink, scheduler$$1) {
+      var disposable$$1 = new SettableDisposable();
+      var takeWhileSink = new TakeWhileSink(this.p, sink, disposable$$1);
+
+      disposable$$1.setDisposable(this.source.run(takeWhileSink, scheduler$$1));
+
+      return disposable$$1;
+    };
+
+    return TakeWhile;
+  }();
+
   var TakeWhileSink = /*#__PURE__*/function (_Pipe2) {
     inherits(TakeWhileSink, _Pipe2);
 
@@ -1279,6 +1367,21 @@
     return TakeWhileSink;
   }(Pipe);
 
+  var SkipWhile = /*#__PURE__*/function () {
+    function SkipWhile(p, source) {
+      classCallCheck$2(this, SkipWhile);
+
+      this.p = p;
+      this.source = source;
+    }
+
+    SkipWhile.prototype.run = function run(sink, scheduler$$1) {
+      return this.source.run(new SkipWhileSink(this.p, sink), scheduler$$1);
+    };
+
+    return SkipWhile;
+  }();
+
   var SkipWhileSink = /*#__PURE__*/function (_Pipe3) {
     inherits(SkipWhileSink, _Pipe3);
 
@@ -1306,6 +1409,21 @@
 
     return SkipWhileSink;
   }(Pipe);
+
+  var SkipAfter = /*#__PURE__*/function () {
+    function SkipAfter(p, source) {
+      classCallCheck$2(this, SkipAfter);
+
+      this.p = p;
+      this.source = source;
+    }
+
+    SkipAfter.prototype.run = function run(sink, scheduler$$1) {
+      return this.source.run(new SkipAfterSink(this.p, sink), scheduler$$1);
+    };
+
+    return SkipAfter;
+  }();
 
   var SkipAfterSink = /*#__PURE__*/function (_Pipe4) {
     inherits(SkipAfterSink, _Pipe4);
@@ -1336,6 +1454,22 @@
 
     return SkipAfterSink;
   }(Pipe);
+
+  var ZipItems = /*#__PURE__*/function () {
+    function ZipItems(f, items, source) {
+      classCallCheck$2(this, ZipItems);
+
+      this.f = f;
+      this.items = items;
+      this.source = source;
+    }
+
+    ZipItems.prototype.run = function run(sink, scheduler$$1) {
+      return this.source.run(new ZipItemsSink(this.f, this.items, sink), scheduler$$1);
+    };
+
+    return ZipItems;
+  }();
 
   var ZipItemsSink = /*#__PURE__*/function (_Pipe) {
     inherits(ZipItemsSink, _Pipe);
@@ -1481,6 +1615,22 @@
     return sink instanceof RelativeSink ? new RelativeSink(origin + sink.offset, sink.sink) : new RelativeSink(origin, sink);
   };
 
+  var Loop = /*#__PURE__*/function () {
+    function Loop(stepper, seed, source) {
+      classCallCheck$2(this, Loop);
+
+      this.step = stepper;
+      this.seed = seed;
+      this.source = source;
+    }
+
+    Loop.prototype.run = function run(sink, scheduler$$1) {
+      return this.source.run(new LoopSink(this.step, this.seed, sink), scheduler$$1);
+    };
+
+    return Loop;
+  }();
+
   var LoopSink = /*#__PURE__*/function (_Pipe) {
     inherits(LoopSink, _Pipe);
 
@@ -1559,6 +1709,21 @@
     return ScanSink;
   }(Pipe);
 
+  var ContinueWith = /*#__PURE__*/function () {
+    function ContinueWith(f, source) {
+      classCallCheck$2(this, ContinueWith);
+
+      this.f = f;
+      this.source = source;
+    }
+
+    ContinueWith.prototype.run = function run(sink, scheduler$$1) {
+      return new ContinueWithSink(this.f, this.source, sink, scheduler$$1);
+    };
+
+    return ContinueWith;
+  }();
+
   var ContinueWithSink = /*#__PURE__*/function (_Pipe) {
     inherits(ContinueWithSink, _Pipe);
 
@@ -1636,6 +1801,21 @@
       return x;
     }, stream);
   };
+
+  var Tap = /*#__PURE__*/function () {
+    function Tap(f, source) {
+      classCallCheck$2(this, Tap);
+
+      this.source = source;
+      this.f = f;
+    }
+
+    Tap.prototype.run = function run(sink, scheduler$$1) {
+      return this.source.run(new TapSink(this.f, sink), scheduler$$1);
+    };
+
+    return Tap;
+  }();
 
   var TapSink = /*#__PURE__*/function (_Pipe) {
     inherits(TapSink, _Pipe);
@@ -1718,6 +1898,32 @@
         return f.apply(void 0, args);
     }
   }
+
+  var Combine = /*#__PURE__*/function () {
+    function Combine(f, sources) {
+      classCallCheck$2(this, Combine);
+
+      this.f = f;
+      this.sources = sources;
+    }
+
+    Combine.prototype.run = function run(sink, scheduler$$1) {
+      var l = this.sources.length;
+      var disposables = new Array(l);
+      var sinks = new Array(l);
+
+      var mergeSink = new CombineSink(disposables, sinks, sink, this.f);
+
+      for (var indexSink, i = 0; i < l; ++i) {
+        indexSink = sinks[i] = new IndexSink(i, mergeSink);
+        disposables[i] = this.sources[i].run(indexSink, scheduler$$1);
+      }
+
+      return disposeAll(disposables);
+    };
+
+    return Combine;
+  }();
 
   var CombineSink = /*#__PURE__*/function (_Pipe) {
     inherits(CombineSink, _Pipe);
@@ -2108,6 +2314,26 @@
     return MergeSink;
   }(Pipe);
 
+  var Snapshot = /*#__PURE__*/function () {
+    function Snapshot(f, values, sampler) {
+      classCallCheck$2(this, Snapshot);
+
+      this.f = f;
+      this.values = values;
+      this.sampler = sampler;
+    }
+
+    Snapshot.prototype.run = function run(sink, scheduler$$1) {
+      var sampleSink = new SnapshotSink(this.f, sink);
+      var valuesDisposable = this.values.run(sampleSink.latest, scheduler$$1);
+      var samplerDisposable = this.sampler.run(sampleSink, scheduler$$1);
+
+      return disposeBoth(samplerDisposable, valuesDisposable);
+    };
+
+    return Snapshot;
+  }();
+
   var SnapshotSink = /*#__PURE__*/function (_Pipe) {
     inherits(SnapshotSink, _Pipe);
 
@@ -2152,6 +2378,143 @@
 
     return LatestValueSink;
   }(Pipe);
+
+  // Copied and modified from https://github.com/invertase/denque
+  // MIT License
+
+  // These constants were extracted directly from denque's shift()
+  // It's not clear exactly why the authors chose these particular
+  // values, but given denque's stated goals, it seems likely that
+  // they were chosen for speed/memory reasons.
+
+  // Max value of _head at which Queue is willing to shink
+  // its internal array
+  var HEAD_MAX_SHRINK = 2;
+
+  // Min value of _tail at which Queue is willing to shink
+  // its internal array
+  var TAIL_MIN_SHRINK = 10000;
+
+  var Queue = /*#__PURE__*/function () {
+    function Queue() {
+      classCallCheck$2(this, Queue);
+
+      this._head = 0;
+      this._tail = 0;
+      this._capacityMask = 0x3;
+      this._list = new Array(4);
+    }
+
+    Queue.prototype.push = function push(x) {
+      var tail$$1 = this._tail;
+      this._list[tail$$1] = x;
+      this._tail = tail$$1 + 1 & this._capacityMask;
+      if (this._tail === this._head) {
+        this._growArray();
+      }
+
+      if (this._head < this._tail) {
+        return this._tail - this._head;
+      } else {
+        return this._capacityMask + 1 - (this._head - this._tail);
+      }
+    };
+
+    Queue.prototype.shift = function shift() {
+      var head = this._head;
+      if (head === this._tail) {
+        return undefined;
+      }
+
+      var x = this._list[head];
+      this._list[head] = undefined;
+      this._head = head + 1 & this._capacityMask;
+      if (head < HEAD_MAX_SHRINK && this._tail > TAIL_MIN_SHRINK && this._tail <= this._list.length >>> 2) {
+        this._shrinkArray();
+      }
+
+      return x;
+    };
+
+    Queue.prototype.isEmpty = function isEmpty() {
+      return this._head === this._tail;
+    };
+
+    Queue.prototype.length = function length() {
+      if (this._head === this._tail) {
+        return 0;
+      } else if (this._head < this._tail) {
+        return this._tail - this._head;
+      } else {
+        return this._capacityMask + 1 - (this._head - this._tail);
+      }
+    };
+
+    Queue.prototype._growArray = function _growArray() {
+      if (this._head) {
+        // copy existing data, head to end, then beginning to tail.
+        this._list = this._copyArray();
+        this._head = 0;
+      }
+
+      // head is at 0 and array is now full, safe to extend
+      this._tail = this._list.length;
+
+      this._list.length *= 2;
+      this._capacityMask = this._capacityMask << 1 | 1;
+    };
+
+    Queue.prototype._shrinkArray = function _shrinkArray() {
+      this._list.length >>>= 1;
+      this._capacityMask >>>= 1;
+    };
+
+    Queue.prototype._copyArray = function _copyArray() {
+      var newArray = [];
+      var list = this._list;
+      var len = list.length;
+
+      var i = void 0;
+      for (i = this._head; i < len; i++) {
+        newArray.push(list[i]);
+      }
+      for (i = 0; i < this._tail; i++) {
+        newArray.push(list[i]);
+      }
+
+      return newArray;
+    };
+
+    return Queue;
+  }();
+
+  var Zip = /*#__PURE__*/function () {
+    function Zip(f, sources) {
+      classCallCheck$2(this, Zip);
+
+      this.f = f;
+      this.sources = sources;
+    }
+
+    Zip.prototype.run = function run(sink, scheduler$$1) {
+      var l = this.sources.length;
+      var disposables = new Array(l);
+      var sinks = new Array(l);
+      var buffers = new Array(l);
+
+      var zipSink = new ZipSink(this.f, buffers, sinks, sink);
+
+      for (var indexSink, i = 0; i < l; ++i) {
+        buffers[i] = new Queue();
+        indexSink = sinks[i] = new IndexSink(i, zipSink);
+        disposables[i] = this.sources[i].run(indexSink, scheduler$$1);
+      }
+
+      return disposeAll(disposables);
+    };
+
+    return Zip;
+  }();
 
   var ZipSink = /*#__PURE__*/function (_Pipe) {
     inherits(ZipSink, _Pipe);
@@ -2228,6 +2591,115 @@
     return true;
   }
 
+  var Switch = /*#__PURE__*/function () {
+    function Switch(source) {
+      classCallCheck$2(this, Switch);
+
+      this.source = source;
+    }
+
+    Switch.prototype.run = function run(sink, scheduler$$1) {
+      var switchSink = new SwitchSink(sink, scheduler$$1);
+      return disposeBoth(switchSink, this.source.run(switchSink, scheduler$$1));
+    };
+
+    return Switch;
+  }();
+
+  var SwitchSink = /*#__PURE__*/function () {
+    function SwitchSink(sink, scheduler$$1) {
+      classCallCheck$2(this, SwitchSink);
+
+      this.sink = sink;
+      this.scheduler = scheduler$$1;
+      this.current = null;
+      this.ended = false;
+    }
+
+    SwitchSink.prototype.event = function event(t, stream) {
+      this._disposeCurrent(t);
+      this.current = new Segment(stream, t, Infinity, this, this.sink, this.scheduler);
+    };
+
+    SwitchSink.prototype.end = function end(t) {
+      this.ended = true;
+      this._checkEnd(t);
+    };
+
+    SwitchSink.prototype.error = function error(t, e) {
+      this.ended = true;
+      this.sink.error(t, e);
+    };
+
+    SwitchSink.prototype.dispose = function dispose$$1() {
+      return this._disposeCurrent(currentTime(this.scheduler));
+    };
+
+    SwitchSink.prototype._disposeCurrent = function _disposeCurrent(t) {
+      if (this.current !== null) {
+        return this.current._dispose(t);
+      }
+    };
+
+    SwitchSink.prototype._disposeInner = function _disposeInner(t, inner) {
+      inner._dispose(t);
+      if (inner === this.current) {
+        this.current = null;
+      }
+    };
+
+    SwitchSink.prototype._checkEnd = function _checkEnd(t) {
+      if (this.ended && this.current === null) {
+        this.sink.end(t);
+      }
+    };
+
+    SwitchSink.prototype._endInner = function _endInner(t, inner) {
+      this._disposeInner(t, inner);
+      this._checkEnd(t);
+    };
+
+    SwitchSink.prototype._errorInner = function _errorInner(t, e, inner) {
+      this._disposeInner(t, inner);
+      this.sink.error(t, e);
+    };
+
+    return SwitchSink;
+  }();
+
+  var Segment = /*#__PURE__*/function () {
+    function Segment(source, min, max, outer, sink, scheduler$$1) {
+      classCallCheck$2(this, Segment);
+
+      this.min = min;
+      this.max = max;
+      this.outer = outer;
+      this.sink = sink;
+      this.disposable = source.run(this, schedulerRelativeTo(min, scheduler$$1));
+    }
+
+    Segment.prototype.event = function event(t, x) {
+      var time = Math.max(0, t + this.min);
+      if (time < this.max) {
+        this.sink.event(time, x);
+      }
+    };
+
+    Segment.prototype.end = function end(t) {
+      this.outer._endInner(t + this.min, this);
+    };
+
+    Segment.prototype.error = function error(t, e) {
+      this.outer._errorInner(t + this.min, e, this);
+    };
+
+    Segment.prototype._dispose = function _dispose(t) {
+      tryDispose(t + this.min, this.disposable, this.sink);
+    };
+
+    return Segment;
+  }();
+
   /**
    * Skip repeated events, using === to detect duplicates
    * @param {Stream} stream stream from which to omit repeated events
@@ -2293,6 +2765,44 @@
   function same(a, b) {
     return a === b;
   }
+
+  var Until = /*#__PURE__*/function () {
+    function Until(maxSignal, source) {
+      classCallCheck$2(this, Until);
+
+      this.maxSignal = maxSignal;
+      this.source = source;
+    }
+
+    Until.prototype.run = function run(sink, scheduler$$1) {
+      var min = new Bound(-Infinity, sink);
+      var max = new UpperBound(this.maxSignal, sink, scheduler$$1);
+      var disposable$$1 = this.source.run(new TimeWindowSink(min, max, sink), scheduler$$1);
+
+      return disposeAll([min, max, disposable$$1]);
+    };
+
+    return Until;
+  }();
+
+  var Since = /*#__PURE__*/function () {
+    function Since(minSignal, source) {
+      classCallCheck$2(this, Since);
+
+      this.minSignal = minSignal;
+      this.source = source;
+    }
+
+    Since.prototype.run = function run(sink, scheduler$$1) {
+      var min = new LowerBound(this.minSignal, sink, scheduler$$1);
+      var max = new Bound(Infinity, sink);
+      var disposable$$1 = this.source.run(new TimeWindowSink(min, max, sink), scheduler$$1);
+
+      return disposeAll([min, max, disposable$$1]);
+    };
+
+    return Since;
+  }();
 
   var Bound = /*#__PURE__*/function (_Pipe) {
     inherits(Bound, _Pipe);
@@ -2394,6 +2904,22 @@
     return UpperBound;
   }(Pipe);
 
+  var Delay = /*#__PURE__*/function () {
+    function Delay(dt, source) {
+      classCallCheck$2(this, Delay);
+
+      this.dt = dt;
+      this.source = source;
+    }
+
+    Delay.prototype.run = function run(sink, scheduler$$1) {
+      var delaySink = new DelaySink(this.dt, sink, scheduler$$1);
+      return disposeBoth(delaySink, this.source.run(delaySink, scheduler$$1));
+    };
+
+    return Delay;
+  }();
+
   var DelaySink = /*#__PURE__*/function (_Pipe) {
     inherits(DelaySink, _Pipe);
 
@@ -2427,6 +2953,21 @@
     return DelaySink;
   }(Pipe);
 
+  var Throttle = /*#__PURE__*/function () {
+    function Throttle(period, source) {
+      classCallCheck$2(this, Throttle);
+
+      this.period = period;
+      this.source = source;
+    }
+
+    Throttle.prototype.run = function run(sink, scheduler$$1) {
+      return this.source.run(new ThrottleSink(this.period, sink), scheduler$$1);
+    };
+
+    return Throttle;
+  }();
+
   var ThrottleSink = /*#__PURE__*/function (_Pipe) {
     inherits(ThrottleSink, _Pipe);
 
@@ -2450,6 +2991,200 @@
     return ThrottleSink;
   }(Pipe);
 
+  var Debounce = /*#__PURE__*/function () {
+    function Debounce(dt, source) {
+      classCallCheck$2(this, Debounce);
+
+      this.dt = dt;
+      this.source = source;
+    }
+
+    Debounce.prototype.run = function run(sink, scheduler$$1) {
+      return new DebounceSink(this.dt, this.source, sink, scheduler$$1);
+    };
+
+    return Debounce;
+  }();
+
+  var DebounceSink = /*#__PURE__*/function () {
+    function DebounceSink(dt, source, sink, scheduler$$1) {
+      classCallCheck$2(this, DebounceSink);
+
+      this.dt = dt;
+      this.sink = sink;
+      this.scheduler = scheduler$$1;
+      this.value = void 0;
+      this.timer = null;
+
+      this.disposable = source.run(this, scheduler$$1);
+    }
+
+    DebounceSink.prototype.event = function event(t, x) {
+      this._clearTimer();
+      this.value = x;
+      this.timer = delay(this.dt, new DebounceTask(this, x), this.scheduler);
+    };
+
+    DebounceSink.prototype._event = function _event(t, x) {
+      this._clearTimer();
+      this.sink.event(t, x);
+    };
+
+    DebounceSink.prototype.end = function end(t) {
+      if (this._clearTimer()) {
+        this.sink.event(t, this.value);
+        this.value = undefined;
+      }
+      this.sink.end(t);
+    };
+
+    DebounceSink.prototype.error = function error(t, x) {
+      this._clearTimer();
+      this.sink.error(t, x);
+    };
+
+    DebounceSink.prototype.dispose = function dispose$$1() {
+      this._clearTimer();
+      this.disposable.dispose();
+    };
+
+    DebounceSink.prototype._clearTimer = function _clearTimer() {
+      if (this.timer === null) {
+        return false;
+      }
+      this.timer.dispose();
+      this.timer = null;
+      return true;
+    };
+
+    return DebounceSink;
+  }();
+
+  var DebounceTask = /*#__PURE__*/function () {
+    function DebounceTask(debounce, value) {
+      classCallCheck$2(this, DebounceTask);
+
+      this.debounce = debounce;
+      this.value = value;
+    }
+
+    DebounceTask.prototype.run = function run(t) {
+      this.debounce._event(t, this.value);
+    };
+
+    DebounceTask.prototype.error = function error(t, e) {
+      this.debounce.error(t, e);
+    };
+
+    DebounceTask.prototype.dispose = function dispose$$1() {};
+
+    return DebounceTask;
+  }();
+
+  var Await = /*#__PURE__*/function () {
+    function Await(source) {
+      classCallCheck$2(this, Await);
+
+      this.source = source;
+    }
+
+    Await.prototype.run = function run(sink, scheduler$$1) {
+      return this.source.run(new AwaitSink(sink, scheduler$$1), scheduler$$1);
+    };
+
+    return Await;
+  }();
+
+  var AwaitSink = /*#__PURE__*/function () {
+    function AwaitSink(sink, scheduler$$1) {
+      var _this = this;
+
+      classCallCheck$2(this, AwaitSink);
+
+      this.sink = sink;
+      this.scheduler = scheduler$$1;
+      this.queue = Promise.resolve();
+
+      // Pre-create closures, to avoid creating them per event
+      this._eventBound = function (x) {
+        return _this.sink.event(currentTime(_this.scheduler), x);
+      };
+      this._endBound = function () {
+        return _this.sink.end(currentTime(_this.scheduler));
+      };
+      this._errorBound = function (e) {
+        return _this.sink.error(currentTime(_this.scheduler), e);
+      };
+    }
+
+    AwaitSink.prototype.event = function event(t, promise) {
+      var _this2 = this;
+
+      this.queue = this.queue.then(function () {
+        return _this2._event(promise);
+      }).catch(this._errorBound);
+    };
+
+    AwaitSink.prototype.end = function end(t) {
+      this.queue = this.queue.then(this._endBound).catch(this._errorBound);
+    };
+
+    AwaitSink.prototype.error = function error(t, e) {
+      var _this3 = this;
+
+      // Don't resolve error values, propagate directly
+      this.queue = this.queue.then(function () {
+        return _this3._errorBound(e);
+      }).catch(fatalError);
+    };
+
+    AwaitSink.prototype._event = function _event(promise) {
+      return promise.then(this._eventBound);
+    };
+
+    return AwaitSink;
+  }();
+
+  /** @license MIT License (c) copyright 2010-2016 original author or authors */
+  /** @author Brian Cavalier */
+  /** @author John Hann */
+
+  var SafeSink = /*#__PURE__*/function () {
+    function SafeSink(sink) {
+      classCallCheck$2(this, SafeSink);
+
+      this.sink = sink;
+      this.active = true;
+    }
+
+    SafeSink.prototype.event = function event(t, x) {
+      if (!this.active) {
+        return;
+      }
+      this.sink.event(t, x);
+    };
+
+    SafeSink.prototype.end = function end(t, x) {
+      if (!this.active) {
+        return;
+      }
+      this.disable();
+      this.sink.end(t, x);
+    };
+
+    SafeSink.prototype.error = function error(t, e) {
+      this.disable();
+      this.sink.error(t, e);
+    };
+
+    SafeSink.prototype.disable = function disable() {
+      this.active = false;
+      return this.sink;
+    };
+
+    return SafeSink;
+  }();
+
   /** @license MIT License (c) copyright 2010-2016 original author or authors */
   /** @author Brian Cavalier */
   /** @author John Hann */
@@ -2469,6 +3204,94 @@
       sink.error(t, e);
     }
   }
+
+  var ErrorStream = /*#__PURE__*/function () {
+    function ErrorStream(e) {
+      classCallCheck$2(this, ErrorStream);
+
+      this.value = e;
+    }
+
+    ErrorStream.prototype.run = function run(sink, scheduler$$1) {
+      return asap(propagateErrorTask$1(this.value, sink), scheduler$$1);
+    };
+
+    return ErrorStream;
+  }();
+
+  var RecoverWith = /*#__PURE__*/function () {
+    function RecoverWith(f, source) {
+      classCallCheck$2(this, RecoverWith);
+
+      this.f = f;
+      this.source = source;
+    }
+
+    RecoverWith.prototype.run = function run(sink, scheduler$$1) {
+      return new RecoverWithSink(this.f, this.source, sink, scheduler$$1);
+    };
+
+    return RecoverWith;
+  }();
+
+  var RecoverWithSink = /*#__PURE__*/function () {
+    function RecoverWithSink(f, source, sink, scheduler$$1) {
+      classCallCheck$2(this, RecoverWithSink);
+
+      this.f = f;
+      this.sink = new SafeSink(sink);
+      this.scheduler = scheduler$$1;
+      this.disposable = source.run(this, scheduler$$1);
+    }
+
+    RecoverWithSink.prototype.event = function event(t, x) {
+      tryEvent(t, x, this.sink);
+    };
+
+    RecoverWithSink.prototype.end = function end(t) {
+      tryEnd(t, this.sink);
+    };
+
+    RecoverWithSink.prototype.error = function error(t, e) {
+      var nextSink = this.sink.disable();
+
+      tryDispose(t, this.disposable, this.sink);
+
+      this._startNext(t, e, nextSink);
+    };
+
+    RecoverWithSink.prototype._startNext = function _startNext(t, x, sink) {
+      try {
+        this.disposable = this._continue(this.f, t, x, sink);
+      } catch (e) {
+        sink.error(t, e);
+      }
+    };
+
+    RecoverWithSink.prototype._continue = function _continue(f, t, x, sink) {
+      return run$1(sink, this.scheduler, withLocalTime$1(t, f(x)));
+    };
+
+    RecoverWithSink.prototype.dispose = function dispose$$1() {
+      return this.disposable.dispose();
+    };
+
+    return RecoverWithSink;
+  }();
+
+  var Multicast = /*#__PURE__*/function () {
+    function Multicast(source) {
+      classCallCheck$2(this, Multicast);
+
+      this.source = new MulticastSource(source);
+    }
+
+    Multicast.prototype.run = function run(sink, scheduler$$1) {
+      return this.source.run(sink, scheduler$$1);
+    };
+
+    return Multicast;
+  }();
 
   var MulticastSource = /*#__PURE__*/function () {
     function MulticastSource(source) {
@@ -4259,6 +5082,11 @@
   var qs = function (s, el) {
       return el.querySelector(s) || fail(s + " not found");
   };
+  // TodoMVC is relatively slow-moving app, but let's use
+  // animation frames to do UI updates anyway
+  var raf = function (a) {
+      return constant$$1(a, nextAnimationFrame(window));
+  };
   var appNode = qs('.todoapp', document);
   var appState = emptyApp;
   var scheduler = newDefaultScheduler();
@@ -4266,9 +5094,8 @@
   var updateFilter = map$1(handleFilterChange, hashchange(window));
   var actions = merge$$1(todoActions, updateFilter);
   var stateUpdates = skipRepeats(scan$$1(runAction, appState, actions));
-  var viewUpdates = chain$$1(function (app) { return constant$$1(app, nextAnimationFrame(window)); }, stateUpdates);
-  var applyUpdates = scan$$1(updateView(addAction), appNode, viewUpdates);
-  runEffects$$1(applyUpdates, scheduler);
+  var viewUpdates = scan$$1(updateView(addAction), appNode, chain$$1(raf, stateUpdates));
+  runEffects$$1(viewUpdates, scheduler);
 
 }());
 //# sourceMappingURL=app.js.map
