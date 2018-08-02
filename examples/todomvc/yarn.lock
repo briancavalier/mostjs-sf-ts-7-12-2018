@@ -101,7 +101,7 @@
     "@most/scheduler" "^1.0.0"
     "@most/types" "^1.0.0"
 
-"@most/core@^1.0.0", "@most/core@^1.3.0":
+"@most/core@^1.0.0":
   version "1.3.1"
   resolved "https://registry.yarnpkg.com/@most/core/-/core-1.3.1.tgz#ebb2d272021e7843ba0d46a74a6f86bf411cb654"
   dependencies:
@@ -110,12 +110,28 @@
     "@most/scheduler" "^1.2.0"
     "@most/types" "^1.0.0"
 
+"@most/core@^1.3.2":
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/@most/core/-/core-1.3.2.tgz#0b2b489ef84dd61075150037afd794e258f09f8c"
+  dependencies:
+    "@most/disposable" "^1.2.1"
+    "@most/prelude" "^1.7.2"
+    "@most/scheduler" "^1.2.1"
+    "@most/types" "^1.0.1"
+
 "@most/disposable@^1.0.0", "@most/disposable@^1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@most/disposable/-/disposable-1.2.0.tgz#cd71368be72cac45420b4ed71f654e5699fd1af0"
   dependencies:
     "@most/prelude" "^1.7.1"
     "@most/types" "^1.0.0"
+
+"@most/disposable@^1.2.1":
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/@most/disposable/-/disposable-1.2.1.tgz#c72d7de3d98a6662916285e4516c713a95b94fa3"
+  dependencies:
+    "@most/prelude" "^1.7.2"
+    "@most/types" "^1.0.1"
 
 "@most/dom-event@^2.0.0":
   version "2.0.0"
@@ -127,6 +143,10 @@
 "@most/prelude@^1.6.4", "@most/prelude@^1.7.1":
   version "1.7.1"
   resolved "https://registry.yarnpkg.com/@most/prelude/-/prelude-1.7.1.tgz#7c70ab6a68bb20481db51ebfbba23fceb502d239"
+
+"@most/prelude@^1.7.2":
+  version "1.7.2"
+  resolved "https://registry.yarnpkg.com/@most/prelude/-/prelude-1.7.2.tgz#be4ed406518d4c8c220e45c39fa7251365425b73"
 
 "@most/scheduler@^0.13.0":
   version "0.13.1"
@@ -142,6 +162,13 @@
     "@most/prelude" "^1.7.1"
     "@most/types" "^1.0.0"
 
+"@most/scheduler@^1.2.1":
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/@most/scheduler/-/scheduler-1.2.1.tgz#f0f5b0af2e28908ac1a10907afe3648b71e10d36"
+  dependencies:
+    "@most/prelude" "^1.7.2"
+    "@most/types" "^1.0.1"
+
 "@most/types@^0.11.1":
   version "0.11.1"
   resolved "https://registry.yarnpkg.com/@most/types/-/types-0.11.1.tgz#5e305e0e346c5b01f1ebdeec4c1dfa5b189b5f9d"
@@ -149,6 +176,10 @@
 "@most/types@^1.0.0":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@most/types/-/types-1.0.0.tgz#5c301d2437342a1b82e38463fdb94e1bafe2c6d9"
+
+"@most/types@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@most/types/-/types-1.0.1.tgz#8691580d1f3bf569b91d48f6688be9ad26dfc86c"
 
 "@types/estree@0.0.39":
   version "0.0.39"
@@ -1393,10 +1424,6 @@ flat-cache@^1.2.1:
     graceful-fs "^4.1.2"
     write "^0.2.1"
 
-flow-bin@^0.76.0:
-  version "0.76.0"
-  resolved "https://registry.yarnpkg.com/flow-bin/-/flow-bin-0.76.0.tgz#eb00036991c3abc106743fcbc7ee321f02aa4faa"
-
 flow-remove-types@^1.1.0:
   version "1.2.3"
   resolved "https://registry.yarnpkg.com/flow-remove-types/-/flow-remove-types-1.2.3.tgz#6131aefc7da43364bb8b479758c9dec7735d1a18"
@@ -1542,9 +1569,9 @@ hosted-git-info@^2.1.4:
   version "2.7.1"
   resolved "https://registry.yarnpkg.com/hosted-git-info/-/hosted-git-info-2.7.1.tgz#97f236977bd6e125408930ff6de3eec6281ec047"
 
-hyperhtml@^2.11.1:
-  version "2.11.3"
-  resolved "https://registry.yarnpkg.com/hyperhtml/-/hyperhtml-2.11.3.tgz#3c64782274d6d27e57eaba3f41fb671978e59685"
+hyperhtml@^2.13.0:
+  version "2.13.0"
+  resolved "https://registry.yarnpkg.com/hyperhtml/-/hyperhtml-2.13.0.tgz#6eb43fc3dfdd0775374d0b80bb990b05aeba2213"
   dependencies:
     lightercollective "^0.1.0"
 
@@ -2387,9 +2414,9 @@ rollup-pluginutils@^1.5.0, rollup-pluginutils@^1.5.1:
     estree-walker "^0.2.1"
     minimatch "^3.0.2"
 
-rollup@^0.62.0:
-  version "0.62.0"
-  resolved "https://registry.yarnpkg.com/rollup/-/rollup-0.62.0.tgz#4ca8b3c9582195dc9341ff8a1375f58319b95bfc"
+rollup@^0.63.5:
+  version "0.63.5"
+  resolved "https://registry.yarnpkg.com/rollup/-/rollup-0.63.5.tgz#5543eecac9a1b83b7e1be598b5be84c9c0a089db"
   dependencies:
     "@types/estree" "0.0.39"
     "@types/node" "*"

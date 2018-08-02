@@ -16,7 +16,7 @@ const fail = (s: string): never => { throw new Error(s) }
 const qs = (s: string, el: Document): Element =>
   el.querySelector(s) || fail(`${s} not found`)
 
-// TodoMVC is relatively slow-moving app, but let's use
+// TodoMVC is a relatively slow-moving app, but let's use
 // animation frames to do UI updates anyway
 const raf = <A> (a: A): Stream<A> =>
   constant(a, nextAnimationFrame(window))
