@@ -1,7 +1,7 @@
 // TODO:
 // 1. localStorage
 // 2. todo editing
-import { chain, constant, skipRepeats, map, merge, scan, runEffects } from '@most/core'
+import { chain, constant, skipRepeats, map, merge, scan, tap, runEffects } from '@most/core'
 import { Stream } from '@most/types'
 import { newDefaultScheduler } from '@most/scheduler'
 import { hashchange } from '@most/dom-event'
@@ -11,6 +11,7 @@ import { emptyApp } from './model'
 import { updateView } from './view'
 import { Action, handleFilterChange, runAction } from './action'
 import { createHyperEventAdapter } from './hyperEventAdapter'
+import { bind } from 'hyperhtml';
 
 const fail = (s: string): never => { throw new Error(s) }
 const qs = (s: string, el: Document): Element =>
@@ -32,6 +33,8 @@ const updateFilter = map(handleFilterChange, hashchange(window))
 const actions = merge(todoActions, updateFilter)
 
 const stateUpdates = skipRepeats(scan(runAction, appState, actions))
-const viewUpdates = scan(updateView(addAction), appNode, chain(raf, stateUpdates))
+const viewUpdates = chain(raf, map(updateView(addAction), stateUpdates))
 
-runEffects(viewUpdates, scheduler)
+const performUpdates = tap(update => bind(appNode)`${update}`, viewUpdates)
+
+runEffects(performUpdates, scheduler)

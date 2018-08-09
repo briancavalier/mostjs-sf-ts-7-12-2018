@@ -1,5 +1,5 @@
 import { compose } from '@most/prelude'
-import { bind, wire } from 'hyperhtml'
+import { wire } from 'hyperhtml'
 import { App, Todo, completedCount } from './model'
 import { Action, handleAdd, handleToggleAll, handleComplete, handleRemove, handleRemoveAllCompleted } from './action'
 
@@ -17,13 +17,13 @@ const filterTodos = ({ filter, todos }: App): Todo[] =>
     }
   })
 
-export const updateView = (addAction: (a: Action) => void) => (appNode: Element, appState: App): Element => {
+export const updateView = (addAction: (a: Action) => void) => (appState: App): Element => {
   const completed = completedCount(appState)
   const todos = appState.todos
   const filtered = filterTodos(appState)
   const remaining = todos.length - completed
 
-  return bind(appNode)`
+  return wire()`
     <header class="header">
       <h1>todos</h1>
       <input class="new-todo" name="new-todo" placeholder="What needs to be done?" autofocus onkeypress="${compose(addAction, handleAdd)}">
